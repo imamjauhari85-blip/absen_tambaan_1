@@ -9,12 +9,15 @@ const CARI = "/api/scan-absen/cari";
 const OFFLINE_KEY = "si_absen_offline_queue_";
 const SCANNER_ID_KEY = "si_absen_scanner_id";
 
-const SCAN_CONFIG = {
-  ROI_SCALE: 0.8,
-  SCAN_INTERVAL: 100,
-  CANVAS_SCALE: 0.75,
-  FRAME_SKIP: 1,
-};
+// Laptop/desktop punya CPU jauh lebih longgar dibanding HP, jadi bisa decode
+// lebih sering & tanpa downscale — membantu kompensasi webcam laptop yang
+// biasanya fixed-focus (gak bisa fokus dekat kayak HP), yang bikin QR
+// kelihatan kurang tajam/kecil di frame kalau jaraknya gak pas.
+const isMobileUA = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+const SCAN_CONFIG = isMobileUA
+  ? { ROI_SCALE: 0.8, SCAN_INTERVAL: 100, CANVAS_SCALE: 0.75, FRAME_SKIP: 1 }
+  : { ROI_SCALE: 0.8, SCAN_INTERVAL: 80, CANVAS_SCALE: 1, FRAME_SKIP: 0 };
 
 interface OfflineItem {
   token: string | null;
@@ -56,6 +59,7 @@ export default function Scanner({ namaSekolah }: { namaSekolah: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const roiCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const zoomCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const processingTokenRef = useRef<string | null>(null);
@@ -360,6 +364,34 @@ export default function Scanner({ namaSekolah }: { namaSekolah: string }) {
           lastScanAtRef.current = now;
           prosesQR(qr.data);
         }
+        return;
+      }
+
+      // Fallback khusus desktop: kalau QR gak kebaca di ROI penuh, coba lagi
+      // dengan crop tengah yang di-"zoom" 2x. Webcam laptop sering gak bisa
+      // fokus dekat, jadi user harus jaga jarak kartu agak jauh biar tetep
+      // tajam — akibatnya QR jadi kecil di frame. Zoom digital ini bantu
+      // jsQR baca QR yang kecil itu tanpa user harus mepetin kartu ke kamera.
+      if (!isMobileUA) {
+        if (!zoomCanvasRef.current) zoomCanvasRef.current = document.createElement("canvas");
+        const zoomCanvas = zoomCanvasRef.current;
+        zoomCanvas.width = roiCanvas.width;
+        zoomCanvas.height = roiCanvas.height;
+        const zctx = zoomCanvas.getContext("2d", { willReadFrequently: true, alpha: false });
+        if (zctx) {
+          const quarter = roiCanvas.width / 4;
+          const half = roiCanvas.width / 2;
+          zctx.drawImage(canvas, roiX + quarter, roiY + quarter, half, half, 0, 0, zoomCanvas.width, zoomCanvas.height);
+          const zoomData = zctx.getImageData(0, 0, zoomCanvas.width, zoomCanvas.height);
+          const qr2 = jsQR(zoomData.data, zoomData.width, zoomData.height, { inversionAttempts: "attemptBoth" });
+          if (qr2?.data) {
+            const now = Date.now();
+            if (processingTokenRef.current !== qr2.data || now - lastScanAtRef.current > 1500) {
+              lastScanAtRef.current = now;
+              prosesQR(qr2.data);
+            }
+          }
+        }
       }
     } catch {
       // abaikan error frame tunggal, lanjut ke frame berikutnya
@@ -459,10 +491,15 @@ export default function Scanner({ namaSekolah }: { namaSekolah: string }) {
     [waitForVideoReady, scanLoop]
   );
 
-  function switchCam() {
+  const switchingCamRef = useRef(false);
+
+  async function switchCam() {
+    if (switchingCamRef.current) return;
+    switchingCamRef.current = true;
     const next = facing === "environment" ? "user" : "environment";
     setFacing(next);
-    startCam(next);
+    await startCam(next);
+    switchingCamRef.current = false;
   }
 
   function togglePause() {
