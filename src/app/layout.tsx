@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import PwaRegister from "@/components/layout/PwaRegister";
+import FontAwesomeLoader from "@/components/layout/FontAwesomeLoader";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -55,15 +56,17 @@ export default async function RootLayout({
         {/* Font Awesome dipertahankan dari versi PHP agar ikon konsisten 1:1.
             Bisa diganti ke lucide-react di iterasi berikutnya kalau mau full-React.
 
-            Dimuat non-blocking (preload + swap) supaya nggak nahan FCP/LCP:
-            browser preload CSS di background, lalu begitu selesai baru
-            di-swap jadi stylesheet aktif. <noscript> jaga-jaga kalau JS mati. */}
+            `preload` di sini cuma resource hint (nyuruh browser mulai
+            download di background, nggak nahan render). Yang benar-benar
+            masang-nya jadi stylesheet aktif itu <FontAwesomeLoader /> di
+            bawah — soalnya trik `onload="..."` di HTML biasa ternyata
+            di-strip sama React/Next punya penanganan khusus buat tag
+            <link>, jadi nggak pernah ke-apply (makanya ikon sempat hilang).
+            <noscript> jaga-jaga kalau JS mati. */}
         <link
           rel="preload"
           as="style"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-          // @ts-expect-error -- atribut HTML polos (bukan React onLoad), sengaja huruf kecil
-          onload="this.onload=null;this.rel='stylesheet'"
         />
         <noscript>
           <link
@@ -73,6 +76,7 @@ export default async function RootLayout({
         </noscript>
       </head>
       <body className="antialiased">
+        <FontAwesomeLoader />
         {children}
         <PwaRegister />
       </body>
