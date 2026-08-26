@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import type { Role, UserRow } from "@/types";
 import { DEVELOPER_USERNAME } from "@/lib/auth/developer";
@@ -74,8 +75,22 @@ export async function getAllMengajarMap(): Promise<Record<number, MengajarRow[]>
   return map;
 }
 
-/** Cek live ke DB apakah user ini wajib ganti password dulu sebelum lanjut pakai aplikasi. */
-export async function cekWajibGantiPassword(userId: number): Promise<boolean> {
+async function _cekWajibGantiPassword(userId: number): Promise<boolean> {
   const { data } = await supabaseAdmin.from("users").select("must_change_password").eq("id", userId).maybeSingle();
   return data?.must_change_password === true;
+}
+
+/**
+ * Cek apakah user ini wajib ganti password dulu sebelum lanjut pakai aplikasi.
+ * Dipanggil di (app)/layout.tsx SETIAP navigasi halaman, jadi tanpa cache ini
+ * jadi 1 query Supabase tambahan di setiap pindah menu (TEMUAN AUDIT #1).
+ * Sengaja pakai revalidate pendek (60 detik), BUKAN cache tanpa batas waktu
+ * seperti data master lain — ini flag keamanan yang wajar untuk tetap
+ * dicek ulang scara berkala, bukan cuma di-invalidate manual saat berubah.
+ */
+export async function cekWajibGantiPassword(userId: number): Promise<boolean> {
+  return unstable_cache(_cekWajibGantiPassword, ["wajib-ganti-password"], {
+    tags: [`user-id-${userId}`],
+    revalidate: 60,
+  })(userId);
 }

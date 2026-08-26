@@ -1,6 +1,21 @@
 import crypto from "crypto";
+import { unstable_cache } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import type { StudentFull } from "@/types";
+
+// KATEGORI B (semi dinamis): daftar nama kelas yang punya siswa aktif dipakai
+// untuk pill filter di halaman Data Siswa. Query-nya sama persis di
+// getStudentsPage() dan getStudentsList() — dibungkus 1 helper ber-cache
+// dengan tag "siswa" supaya tidak query "students" 2x untuk data yang sama,
+// dan otomatis ikut ter-invalidate saat ada CRUD siswa (tambah/edit/
+// nonaktifkan/aktifkan semuanya lewat revalidateTag("siswa")).
+async function _getSemuaKelasAktif(): Promise<string[]> {
+  const { data: kelasRows } = await supabaseAdmin.from("students").select("class").eq("status", "aktif");
+  return Array.from(new Set((kelasRows ?? []).map((r) => r.class))).sort();
+}
+async function getSemuaKelasAktif(): Promise<string[]> {
+  return unstable_cache(_getSemuaKelasAktif, ["siswa-semua-kelas-aktif"], { tags: ["siswa"] })();
+}
 
 export interface SiswaStats {
   total: number;
@@ -37,11 +52,10 @@ export async function getStudentsPage(
   page: number,
   pageSize: number
 ): Promise<StudentsPageResult> {
-  // Daftar semua kelas (untuk pill filter admin) — cuma ambil 1 kolom, ringan.
-  // Hanya dari siswa aktif, supaya kelas yang isinya cuma siswa yang sudah
-  // lulus/pindah semua tidak nongol lagi di pill filter.
-  const { data: kelasRows } = await supabaseAdmin.from("students").select("class").eq("status", "aktif");
-  const semuaKelas = Array.from(new Set((kelasRows ?? []).map((r) => r.class))).sort();
+  // Daftar semua kelas (untuk pill filter admin) — hanya dari siswa aktif,
+  // supaya kelas yang isinya cuma siswa yang sudah lulus/pindah semua tidak
+  // nongol lagi di pill filter.
+  const semuaKelas = await getSemuaKelasAktif();
 
   function applyFilter<T>(q: T): T {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -143,9 +157,7 @@ export async function getStudentsList(
   kelasFilter: string,
   search: string
 ): Promise<{ list: StudentFull[]; semuaKelas: string[] }> {
-  // Daftar semua kelas (untuk pill filter admin) — hanya dari siswa aktif.
-  const { data: kelasRows } = await supabaseAdmin.from("students").select("class").eq("status", "aktif");
-  const semuaKelas = Array.from(new Set((kelasRows ?? []).map((r) => r.class))).sort();
+  const semuaKelas = await getSemuaKelasAktif();
 
   let query = supabaseAdmin
     .from("students")

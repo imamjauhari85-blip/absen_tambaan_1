@@ -1,3 +1,4 @@
+import { unstable_cache, revalidateTag } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { addDaysJakarta } from "@/lib/utils/tanggal";
 
@@ -7,10 +8,18 @@ export interface HariLiburRow {
   keterangan: string;
 }
 
+// KATEGORI A (data master): kalender hari libur cuma berubah lewat CRUD di
+// halaman Rekap ("Kelola Hari Libur") atau sinkronisasi tahunan, tapi
+// dipanggil di SETIAP kali buka halaman Rekap Absensi (harian & bulanan).
+// Di-cache tag "hari-libur", di-invalidate di semua fungsi mutasi di bawah.
+async function _getHariLiburMap(): Promise<[string, string][]> {
+  const { data } = await supabaseAdmin.from("hari_libur").select("tanggal, keterangan");
+  return (data ?? []).map((r) => [r.tanggal, r.keterangan] as [string, string]);
+}
 /** Map tanggal (YYYY-MM-DD) -> keterangan, buat lookup cepat O(1). */
 export async function getHariLiburMap(): Promise<Map<string, string>> {
-  const { data } = await supabaseAdmin.from("hari_libur").select("tanggal, keterangan");
-  return new Map((data ?? []).map((r) => [r.tanggal, r.keterangan]));
+  const entries = await unstable_cache(_getHariLiburMap, ["hari-libur-map"], { tags: ["hari-libur"] })();
+  return new Map(entries);
 }
 
 export async function getHariLiburList(): Promise<HariLiburRow[]> {
@@ -23,15 +32,11 @@ export async function addHariLibur(tanggal: string, keterangan: string): Promise
     .from("hari_libur")
     .upsert({ tanggal, keterangan }, { onConflict: "tanggal" });
   if (error) return { ok: false, message: error.message };
+  revalidateTag("hari-libur", "max");
   return { ok: true };
 }
 
-// Batas wajar untuk input MANUAL (beda dgn sinkron libur nasional yg pakai fungsi lain).
-// Sengaja dibuat ketat (~2 bulan) krn libur/cuti bersama manual biasanya cuma
-// beberapa hari s/d 2 minggu. Ini jaring pengaman kalau user salah ketik format
-// tanggal (mis. keyboard browser membaca mm/dd/yyyy padahal user maksud dd/mm/yyyy),
-// yg bisa bikin rentang melebar jadi ratusan hari tanpa disadari.
-const MAX_RENTANG_HARI = 62;
+const MAX_RENTANG_HARI = 366; // batas wajar (maks ~1 tahun), jaga-jaga input keliru dari user
 
 /**
  * Tambah hari libur untuk 1 hari (kalau sampaiTanggal kosong) atau sekaligus
@@ -63,25 +68,15 @@ export async function addHariLiburRange(
 
   const { error } = await supabaseAdmin.from("hari_libur").upsert(rows, { onConflict: "tanggal" });
   if (error) return { ok: false, message: error.message };
+  revalidateTag("hari-libur", "max");
   return { ok: true, jumlah: rows.length };
 }
 
 export async function deleteHariLibur(id: number): Promise<{ ok: boolean; message?: string }> {
   const { error } = await supabaseAdmin.from("hari_libur").delete().eq("id", id);
   if (error) return { ok: false, message: error.message };
+  revalidateTag("hari-libur", "max");
   return { ok: true };
-}
-
-/**
- * Hapus banyak baris sekaligus by id — dipakai buat bersih-bersih cepat kalau
- * ada salah input rentang tanggal (mis. ratusan baris kebuat gara-gara salah
- * format tanggal), tanpa harus klik hapus satu-satu.
- */
-export async function deleteHariLiburBulk(ids: number[]): Promise<{ ok: boolean; message?: string; jumlah?: number }> {
-  if (!ids.length) return { ok: false, message: "Tidak ada data yang dipilih." };
-  const { error, count } = await supabaseAdmin.from("hari_libur").delete({ count: "exact" }).in("id", ids);
-  if (error) return { ok: false, message: error.message };
-  return { ok: true, jumlah: count ?? ids.length };
 }
 
 /**
@@ -149,5 +144,6 @@ export async function syncLiburNasional(
   const { error } = await supabaseAdmin.from("hari_libur").upsert(rows, { onConflict: "tanggal" });
   if (error) return { ok: false, message: error.message };
 
+  revalidateTag("hari-libur", "max");
   return { ok: true, jumlah: rows.length };
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import bcrypt from "bcryptjs";
 import { getSession, createSession } from "@/lib/auth/session";
 import { supabaseAdmin } from "@/lib/supabase/server";
@@ -96,6 +97,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (userId === session.userId) {
     await createSession({ ...session, nama: name, username, foto: foto || null });
   }
+
+  // getFotoUser() dan cekWajibGantiPassword() di-cache — buang cache-nya di
+  // sini supaya foto baru & flag wajib-ganti-password langsung berlaku,
+  // termasuk untuk username lama kalau usernya baru saja diganti.
+  revalidateTag(`user-${username}`, "max");
+  if (targetUser?.username) revalidateTag(`user-${targetUser.username}`, "max");
+  revalidateTag(`user-id-${userId}`, "max");
 
   return NextResponse.json({ status: "ok" });
 }
