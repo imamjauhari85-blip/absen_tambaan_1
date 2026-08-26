@@ -16,7 +16,12 @@ const FA_HREF = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/a
  */
 export default function FontAwesomeLoader() {
   useEffect(() => {
-    if (document.querySelector(`link[href="${FA_HREF}"]`)) return;
+    // PENTING: harus filter rel="stylesheet" secara spesifik. Kalau cuma
+    // cek href doang, ini bakal nemu <link rel="preload" as="style"> yang
+    // sudah ada duluan di <head> (href-nya sama), langsung `return` lebih
+    // awal, dan stylesheet aslinya nggak pernah kebuat — makanya ikon
+    // masih belum muncul setelah percobaan sebelumnya.
+    if (document.querySelector(`link[rel="stylesheet"][href="${FA_HREF}"]`)) return;
 
     const link = document.createElement("link");
     link.rel = "stylesheet";
