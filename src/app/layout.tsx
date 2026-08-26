@@ -53,11 +53,24 @@ export default async function RootLayout({
     >
       <head>
         {/* Font Awesome dipertahankan dari versi PHP agar ikon konsisten 1:1.
-            Bisa diganti ke lucide-react di iterasi berikutnya kalau mau full-React. */}
+            Bisa diganti ke lucide-react di iterasi berikutnya kalau mau full-React.
+
+            Dimuat non-blocking (preload + swap) supaya nggak nahan FCP/LCP:
+            browser preload CSS di background, lalu begitu selesai baru
+            di-swap jadi stylesheet aktif. <noscript> jaga-jaga kalau JS mati. */}
         <link
-          rel="stylesheet"
+          rel="preload"
+          as="style"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+          // @ts-expect-error -- atribut HTML polos (bukan React onLoad), sengaja huruf kecil
+          onload="this.onload=null;this.rel='stylesheet'"
         />
+        <noscript>
+          <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+          />
+        </noscript>
       </head>
       <body className="antialiased">
         {children}
