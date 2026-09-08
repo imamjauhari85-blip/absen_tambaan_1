@@ -257,20 +257,50 @@ export async function getStudentsForPrint(opts: {
   return list;
 }
 
+export interface InactiveStudentsPageResult {
+  list: StudentFull[];
+  total: number;
+  totalPages: number;
+  page: number;
+}
+
 /**
- * Daftar siswa yang statusnya sudah 'lulus' atau 'pindah' (soft-deleted),
- * untuk halaman "Siswa Nonaktif". Tidak perlu token QR di sini karena siswa
+ * Versi paginasi (pakai .range() + count di level database) dari daftar
+ * siswa berstatus 'lulus'/'pindah' (soft-deleted), untuk halaman "Siswa
+ * Nonaktif". Angkatan yang lulus/pindah terus menumpuk tiap tahun dan tidak
+ * pernah dibersihkan (histori absensinya tetap dipertahankan), jadi tabel
+ * ini butuh pagination sungguhan seperti getStudentsPage() — bukan cuma
+ * menarik semua baris sekaligus. Tidak perlu token QR di sini karena siswa
  * nonaktif tidak boleh dipakai buat scan absen lagi.
  */
-export async function getInactiveStudents(search: string): Promise<StudentFull[]> {
-  let query = supabaseAdmin
-    .from("students")
-    .select("id, name, class, nisn, foto, jenis_kelamin, no_hp_ortu, status")
-    .in("status", ["lulus", "pindah"]);
-  if (search) query = query.or(`name.ilike.%${search}%,nisn.ilike.%${search}%`);
-  const { data } = await query.order("class").order("name");
+export async function getInactiveStudentsPage(
+  search: string,
+  page: number,
+  pageSize: number
+): Promise<InactiveStudentsPageResult> {
+  function applyFilter<T>(q: T): T {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = q as any;
+    query = query.in("status", ["lulus", "pindah"]);
+    if (search) query = query.or(`name.ilike.%${search}%,nisn.ilike.%${search}%`);
+    return query;
+  }
 
-  return (data ?? []).map((s) => ({
+  const { count } = await applyFilter(
+    supabaseAdmin.from("students").select("id", { count: "exact", head: true })
+  );
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const pageAman = Math.min(Math.max(1, page), totalPages);
+  const from = (pageAman - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const query = applyFilter(
+    supabaseAdmin.from("students").select("id, name, class, nisn, foto, jenis_kelamin, no_hp_ortu, status")
+  );
+  const { data } = await query.order("class").order("name").range(from, to);
+
+  const list: StudentFull[] = (data ?? []).map((s) => ({
     id: s.id,
     name: s.name,
     class: s.class,
@@ -281,6 +311,8 @@ export async function getInactiveStudents(search: string): Promise<StudentFull[]
     token: null,
     status: s.status as "lulus" | "pindah",
   }));
+
+  return { list, total, totalPages, page: pageAman };
 }
 
 export function hitungStatistikSiswa(list: StudentFull[]): SiswaStats {

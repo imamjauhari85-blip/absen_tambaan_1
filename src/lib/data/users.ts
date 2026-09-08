@@ -8,31 +8,62 @@ import { DEVELOPER_USERNAME } from "@/lib/auth/developer";
  * Akun developer (lihat src/lib/auth/developer.ts) SENGAJA di-exclude di sini
  * supaya tidak muncul di halaman Manajemen Pengguna.
  */
-export async function getUsersList(search = ""): Promise<UserRow[]> {
-  let query = supabaseAdmin
-    .from("users")
-    .select("id, name, username, role, foto")
-    .neq("username", DEVELOPER_USERNAME)
-    .order("name", { ascending: true });
-  if (search) query = query.or(`name.ilike.%${search}%,username.ilike.%${search}%`);
+export interface UsersPageResult {
+  list: UserRow[];
+  total: number;
+  jumlahAdmin: number;
+  jumlahGuru: number;
+  totalPages: number;
+  page: number;
+}
 
-  const { data: users } = await query;
-  const list = users ?? [];
-  if (list.length === 0) return [];
+/**
+ * Versi paginasi sungguhan (pakai .range() + count di level database) untuk
+ * halaman Manajemen Pengguna. total/jumlahAdmin/jumlahGuru dihitung lewat
+ * COUNT ringan atas SELURUH hasil filter (bukan cuma satu halaman tabel),
+ * supaya KPI ringkas di atas tabel tetap akurat walau jumlah guru+admin
+ * makin banyak dan tabelnya sendiri dipaginasi.
+ */
+export async function getUsersPage(search: string, page: number, pageSize: number): Promise<UsersPageResult> {
+  function applyFilter<T>(q: T): T {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = q as any;
+    query = query.neq("username", DEVELOPER_USERNAME);
+    if (search) query = query.or(`name.ilike.%${search}%,username.ilike.%${search}%`);
+    return query;
+  }
 
-  const { data: kelasRows } = await supabaseAdmin
-    .from("guru_mengajar_kelas")
-    .select("guru_id, class")
-    .eq("mapel", "Guru Kelas")
-    .in(
-      "guru_id",
-      list.map((u) => u.id)
-    );
+  const [{ count: total }, { count: jumlahAdmin }] = await Promise.all([
+    applyFilter(supabaseAdmin.from("users").select("id", { count: "exact", head: true })),
+    applyFilter(supabaseAdmin.from("users").select("id", { count: "exact", head: true }).eq("role", "admin")),
+  ]);
+  const totalAman = total ?? 0;
+  const jumlahAdminAman = jumlahAdmin ?? 0;
+  const jumlahGuru = totalAman - jumlahAdminAman;
 
-  const kelasMap = new Map<number, string>();
-  for (const row of kelasRows ?? []) kelasMap.set(row.guru_id, row.class);
+  const totalPages = Math.max(1, Math.ceil(totalAman / pageSize));
+  const pageAman = Math.min(Math.max(1, page), totalPages);
+  const from = (pageAman - 1) * pageSize;
+  const to = from + pageSize - 1;
 
-  return list.map((u) => ({
+  const query = applyFilter(supabaseAdmin.from("users").select("id, name, username, role, foto"));
+  const { data: users } = await query.order("name", { ascending: true }).range(from, to);
+  const baseList = users ?? [];
+
+  let kelasMap = new Map<number, string>();
+  if (baseList.length > 0) {
+    const { data: kelasRows } = await supabaseAdmin
+      .from("guru_mengajar_kelas")
+      .select("guru_id, class")
+      .eq("mapel", "Guru Kelas")
+      .in(
+        "guru_id",
+        baseList.map((u) => u.id)
+      );
+    kelasMap = new Map((kelasRows ?? []).map((row) => [row.guru_id, row.class]));
+  }
+
+  const list: UserRow[] = baseList.map((u) => ({
     id: u.id,
     name: u.name,
     username: u.username,
@@ -40,6 +71,8 @@ export async function getUsersList(search = ""): Promise<UserRow[]> {
     foto: u.foto,
     kelas: kelasMap.get(u.id) ?? null,
   }));
+
+  return { list, total: totalAman, jumlahAdmin: jumlahAdminAman, jumlahGuru, totalPages, page: pageAman };
 }
 
 /** Daftar kelas unik yang sudah pernah dipilih sebagai wali kelas (termasuk yang belum ada siswanya). */
@@ -55,16 +88,23 @@ export interface MengajarRow {
 }
 
 /**
- * Semua penugasan mengajar mapel di luar wali kelas, untuk SEMUA guru
- * sekaligus (1 query), dikelompokkan per guru_id. Dipakai supaya halaman
- * Manajemen Pengguna bisa langsung sediakan data ini ke tiap modal Edit
- * Pengguna tanpa perlu fetch tambahan pas modalnya dibuka.
+ * Semua penugasan mengajar mapel di luar wali kelas untuk sekumpulan guru
+ * (1 query), dikelompokkan per guru_id. Dipakai supaya halaman Manajemen
+ * Pengguna bisa langsung sediakan data ini ke tiap modal Edit Pengguna tanpa
+ * perlu fetch tambahan pas modalnya dibuka.
+ *
+ * Sengaja discope ke `guruIds` (guru-guru yang sedang tampil di halaman
+ * tabel yang sudah dipaginasi), BUKAN semua guru sekolah sekaligus — supaya
+ * query ini tetap ringan berapa pun jumlah guru yang menumpuk seiring waktu.
  */
-export async function getAllMengajarMap(): Promise<Record<number, MengajarRow[]>> {
+export async function getAllMengajarMap(guruIds: number[]): Promise<Record<number, MengajarRow[]>> {
+  if (guruIds.length === 0) return {};
+
   const { data } = await supabaseAdmin
     .from("guru_mengajar_kelas")
     .select("id, guru_id, class, mapel")
     .neq("mapel", "Guru Kelas")
+    .in("guru_id", guruIds)
     .order("class", { ascending: true });
 
   const map: Record<number, MengajarRow[]> = {};
