@@ -1,0 +1,325 @@
+SET
+ transaksi | default_transaksi 
+-----------+-------------------
+ on        | on
+(1 row)
+
+SET
+SET
+    db    | role_saat_ini | versi_num | timezone |                                      version                                       
+----------+---------------+-----------+----------+------------------------------------------------------------------------------------
+ postgres | postgres      |    170006 | UTC      | PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit
+(1 row)
+
+    rolname     | rolbypassrls | rolcanlogin | rolsuper 
+----------------+--------------+-------------+----------
+ anon           | f            | f           | f
+ authenticated  | f            | f           | f
+ authenticator  | f            | t           | f
+ postgres       | t            | t           | f
+ service_role   | t            | f           | f
+ supabase_admin | t            | t           | t
+(6 rows)
+
+   table_name    | no |     column_name      |        data_type         | is_nullable |              column_default               | is_identity | identity_generation 
+-----------------+----+----------------------+--------------------------+-------------+-------------------------------------------+-------------+---------------------
+ absensi         |  1 | id                   | bigint                   | NO          |                                           | YES         | ALWAYS
+ absensi         |  2 | siswa_id             | bigint                   | NO          |                                           | NO          | 
+ absensi         |  3 | tanggal              | date                     | NO          |                                           | NO          | 
+ absensi         |  4 | status               | text                     | NO          |                                           | NO          | 
+ absensi         |  5 | jam_masuk            | time without time zone   | YES         |                                           | NO          | 
+ absensi         |  6 | jam_pulang           | time without time zone   | YES         |                                           | NO          | 
+ absensi         |  7 | keterangan           | text                     | YES         |                                           | NO          | 
+ absensi         |  8 | tapel                | text                     | YES         |                                           | NO          | 
+ absensi         |  9 | semester             | text                     | YES         |                                           | NO          | 
+ absensi         | 10 | scan_oleh            | text                     | YES         |                                           | NO          | 
+ absensi         | 11 | scanner_id           | text                     | YES         |                                           | NO          | 
+ absensi         | 12 | created_at           | timestamp with time zone | NO          | now()                                     | NO          | 
+ absensi         | 13 | lampiran             | text                     | YES         |                                           | NO          | 
+ absensi_log     |  1 | id                   | bigint                   | NO          |                                           | YES         | ALWAYS
+ absensi_log     |  2 | admin_id             | bigint                   | YES         |                                           | NO          | 
+ absensi_log     |  3 | siswa_id             | bigint                   | YES         |                                           | NO          | 
+ absensi_log     |  4 | tanggal_absen        | date                     | YES         |                                           | NO          | 
+ absensi_log     |  5 | status_lama          | text                     | YES         |                                           | NO          | 
+ absensi_log     |  6 | status_baru          | text                     | YES         |                                           | NO          | 
+ absensi_log     |  7 | keterangan           | text                     | YES         |                                           | NO          | 
+ absensi_log     |  8 | scanner_id           | text                     | YES         |                                           | NO          | 
+ absensi_log     |  9 | created_at           | timestamp with time zone | NO          | now()                                     | NO          | 
+ absensi_log     | 10 | scan_id              | text                     | YES         |                                           | NO          | 
+ absensi_setting |  1 | id                   | bigint                   | NO          |                                           | YES         | ALWAYS
+ absensi_setting |  2 | jam_masuk            | time without time zone   | NO          | '07:00:00'::time without time zone        | NO          | 
+ absensi_setting |  3 | batas_terlambat      | time without time zone   | NO          | '07:15:00'::time without time zone        | NO          | 
+ absensi_setting |  4 | jam_pulang_mulai     | time without time zone   | NO          | '11:30:00'::time without time zone        | NO          | 
+ absensi_setting |  5 | tapel                | text                     | NO          | '2025/2026'::text                         | NO          | 
+ absensi_setting |  6 | semester             | text                     | NO          | 'genap'::text                             | NO          | 
+ absensi_setting |  7 | durasi_kunci_menit   | integer                  | NO          | 120                                       | NO          | 
+ absensi_setting |  8 | toleransi_pagi_menit | integer                  | NO          | 60                                        | NO          | 
+ log_aktivitas   |  1 | id                   | integer                  | NO          | nextval('log_aktivitas_id_seq'::regclass) | NO          | 
+ log_aktivitas   |  2 | admin_id             | integer                  | YES         |                                           | NO          | 
+ log_aktivitas   |  3 | aksi                 | text                     | NO          |                                           | NO          | 
+ log_aktivitas   |  4 | target               | text                     | YES         |                                           | NO          | 
+ log_aktivitas   |  5 | keterangan           | text                     | YES         |                                           | NO          | 
+ log_aktivitas   |  6 | created_at           | timestamp with time zone | NO          | now()                                     | NO          | 
+ students        |  1 | id                   | bigint                   | NO          |                                           | YES         | ALWAYS
+ students        |  2 | name                 | text                     | NO          |                                           | NO          | 
+ students        |  3 | class                | text                     | NO          |                                           | NO          | 
+ students        |  4 | foto                 | text                     | YES         |                                           | NO          | 
+ students        |  5 | nisn                 | text                     | YES         |                                           | NO          | 
+ students        |  6 | jenis_kelamin        | text                     | YES         |                                           | NO          | 
+ students        |  7 | no_hp_ortu           | text                     | YES         |                                           | NO          | 
+ students        |  8 | status               | text                     | NO          | 'aktif'::text                             | NO          | 
+ users           |  1 | id                   | bigint                   | NO          |                                           | YES         | ALWAYS
+ users           |  2 | username             | text                     | NO          |                                           | NO          | 
+ users           |  3 | password             | text                     | NO          |                                           | NO          | 
+ users           |  4 | name                 | text                     | NO          |                                           | NO          | 
+ users           |  5 | role                 | text                     | NO          |                                           | NO          | 
+ users           |  6 | foto                 | text                     | YES         |                                           | NO          | 
+ users           |  7 | must_change_password | boolean                  | NO          | false                                     | NO          | 
+ users           |  8 | failed_attempts      | integer                  | NO          | 0                                         | NO          | 
+ users           |  9 | locked_until         | timestamp with time zone | YES         |                                           | NO          | 
+ users           | 10 | nip                  | text                     | YES         |                                           | NO          | 
+(55 rows)
+
+      tabel      |           conname            | contype |                                                   definisi                                                   
+-----------------+------------------------------+---------+--------------------------------------------------------------------------------------------------------------
+ absensi         | absensi_status_check         | c       | CHECK ((status = ANY (ARRAY['hadir'::text, 'terlambat'::text, 'izin'::text, 'sakit'::text, 'alpha'::text])))
+ absensi         | absensi_siswa_id_fkey        | f       | FOREIGN KEY (siswa_id) REFERENCES students(id) ON DELETE CASCADE
+ absensi         | absensi_pkey                 | p       | PRIMARY KEY (id)
+ absensi         | absensi_siswa_id_tanggal_key | u       | UNIQUE (siswa_id, tanggal)
+ absensi         | absensi_siswa_tanggal_unique | u       | UNIQUE (siswa_id, tanggal)
+ absensi_log     | absensi_log_admin_id_fkey    | f       | FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL
+ absensi_log     | absensi_log_siswa_id_fkey    | f       | FOREIGN KEY (siswa_id) REFERENCES students(id) ON DELETE SET NULL
+ absensi_log     | absensi_log_pkey             | p       | PRIMARY KEY (id)
+ absensi_setting | absensi_setting_pkey         | p       | PRIMARY KEY (id)
+ log_aktivitas   | log_aktivitas_admin_id_fkey  | f       | FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL
+ log_aktivitas   | log_aktivitas_pkey           | p       | PRIMARY KEY (id)
+ students        | students_jenis_kelamin_check | c       | CHECK ((jenis_kelamin = ANY (ARRAY['L'::text, 'P'::text])))
+ students        | students_status_check        | c       | CHECK ((status = ANY (ARRAY['aktif'::text, 'lulus'::text, 'pindah'::text])))
+ students        | students_pkey                | p       | PRIMARY KEY (id)
+ users           | users_role_check             | c       | CHECK ((role = ANY (ARRAY['admin'::text, 'guru'::text])))
+ users           | users_pkey                   | p       | PRIMARY KEY (id)
+ users           | users_username_key           | u       | UNIQUE (username)
+(17 rows)
+
+    tablename    |          indexname           |                                                                 indexdef                                                                  
+-----------------+------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------
+ absensi         | absensi_pkey                 | CREATE UNIQUE INDEX absensi_pkey ON public.absensi USING btree (id)
+ absensi         | absensi_siswa_id_tanggal_key | CREATE UNIQUE INDEX absensi_siswa_id_tanggal_key ON public.absensi USING btree (siswa_id, tanggal)
+ absensi         | absensi_siswa_tanggal_unique | CREATE UNIQUE INDEX absensi_siswa_tanggal_unique ON public.absensi USING btree (siswa_id, tanggal)
+ absensi         | idx_absensi_created_at       | CREATE INDEX idx_absensi_created_at ON public.absensi USING btree (created_at DESC)
+ absensi         | idx_absensi_siswa            | CREATE INDEX idx_absensi_siswa ON public.absensi USING btree (siswa_id)
+ absensi         | idx_absensi_siswa_id         | CREATE INDEX idx_absensi_siswa_id ON public.absensi USING btree (siswa_id)
+ absensi         | idx_absensi_tanggal          | CREATE INDEX idx_absensi_tanggal ON public.absensi USING btree (tanggal)
+ absensi         | idx_absensi_tapel_semester   | CREATE INDEX idx_absensi_tapel_semester ON public.absensi USING btree (tapel, semester)
+ absensi_log     | absensi_log_pkey             | CREATE UNIQUE INDEX absensi_log_pkey ON public.absensi_log USING btree (id)
+ absensi_log     | idx_absensi_log_created_at   | CREATE INDEX idx_absensi_log_created_at ON public.absensi_log USING btree (created_at DESC)
+ absensi_log     | uq_absensi_log_scan_id       | CREATE UNIQUE INDEX uq_absensi_log_scan_id ON public.absensi_log USING btree (scan_id) WHERE (scan_id IS NOT NULL)
+ absensi_setting | absensi_setting_pkey         | CREATE UNIQUE INDEX absensi_setting_pkey ON public.absensi_setting USING btree (id)
+ log_aktivitas   | idx_log_aktivitas_created_at | CREATE INDEX idx_log_aktivitas_created_at ON public.log_aktivitas USING btree (created_at DESC)
+ log_aktivitas   | log_aktivitas_pkey           | CREATE UNIQUE INDEX log_aktivitas_pkey ON public.log_aktivitas USING btree (id)
+ students        | idx_students_class           | CREATE INDEX idx_students_class ON public.students USING btree (class)
+ students        | idx_students_nisn_aktif      | CREATE UNIQUE INDEX idx_students_nisn_aktif ON public.students USING btree (nisn) WHERE ((status = 'aktif'::text) AND (nisn IS NOT NULL))
+ students        | idx_students_status          | CREATE INDEX idx_students_status ON public.students USING btree (status)
+ students        | students_pkey                | CREATE UNIQUE INDEX students_pkey ON public.students USING btree (id)
+ users           | users_pkey                   | CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)
+ users           | users_username_key           | CREATE UNIQUE INDEX users_username_key ON public.users USING btree (username)
+(20 rows)
+
+      tabel      |           tgname            | tgenabled |                                                                           definisi                                                                           
+-----------------+-----------------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ absensi_setting | trg_sinkron_riwayat_periode | O         | CREATE TRIGGER trg_sinkron_riwayat_periode AFTER INSERT OR UPDATE OF tapel ON public.absensi_setting FOR EACH ROW EXECUTE FUNCTION sinkron_riwayat_periode()
+ students        | trg_sinkron_riwayat_siswa   | O         | CREATE TRIGGER trg_sinkron_riwayat_siswa AFTER INSERT OR UPDATE OF class, status ON public.students FOR EACH ROW EXECUTE FUNCTION sinkron_riwayat_siswa()
+(2 rows)
+
+       relname       | relkind | rls_aktif | rls_force 
+---------------------+---------+-----------+-----------
+ absensi             | r       | f         | f
+ absensi_log         | r       | f         | f
+ absensi_qr_token    | r       | f         | f
+ absensi_scanner     | r       | f         | f
+ absensi_setting     | r       | f         | f
+ guru_mengajar_kelas | r       | f         | f
+ hari_libur          | r       | f         | f
+ kelas_master        | r       | f         | f
+ kenaikan_kelas      | r       | t         | f
+ log_aktivitas       | r       | f         | f
+ riwayat_kelas       | r       | t         | f
+ settings            | r       | f         | f
+ students            | r       | f         | f
+ tahun_pelajaran     | r       | t         | f
+ users               | r       | f         | f
+ wa_log              | r       | f         | f
+(16 rows)
+
+ schemaname | tablename | policyname | roles | cmd | qual | with_check 
+------------+-----------+------------+-------+-----+------+------------
+(0 rows)
+
+     relname     |    rolname    | p_select | p_insert | p_update | p_delete 
+-----------------+---------------+----------+----------+----------+----------
+ absensi         | anon          | t        | t        | t        | t
+ absensi         | authenticated | t        | t        | t        | t
+ absensi         | service_role  | t        | t        | t        | t
+ absensi_log     | anon          | t        | t        | t        | t
+ absensi_log     | authenticated | t        | t        | t        | t
+ absensi_log     | service_role  | t        | t        | t        | t
+ absensi_setting | anon          | t        | t        | t        | t
+ absensi_setting | authenticated | t        | t        | t        | t
+ absensi_setting | service_role  | t        | t        | t        | t
+ log_aktivitas   | anon          | t        | t        | t        | t
+ log_aktivitas   | authenticated | t        | t        | t        | t
+ log_aktivitas   | service_role  | t        | t        | t        | t
+ students        | anon          | t        | t        | t        | t
+ students        | authenticated | t        | t        | t        | t
+ students        | service_role  | t        | t        | t        | t
+ users           | anon          | t        | t        | t        | t
+ users           | authenticated | t        | t        | t        | t
+ users           | service_role  | t        | t        | t        | t
+(18 rows)
+
+    rolname    | usage_public 
+---------------+--------------
+ anon          | t
+ authenticated | t
+ service_role  | t
+(3 rows)
+
+    rolname    |                                        rolconfig                                         
+---------------+------------------------------------------------------------------------------------------
+ authenticator | {"session_preload_libraries=supautils, safeupdate",statement_timeout=8s,lock_timeout=8s}
+(1 row)
+
+         proname         |                                                                                       argumen                                                                                        | security_definer | pemilik  |                                                acl                                                 
+-------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+----------+----------------------------------------------------------------------------------------------------
+ batalkan_kenaikan_kelas | p_id bigint                                                                                                                                                                          | f                | postgres | {postgres=X/postgres,service_role=X/postgres}
+ distinct_bulan_absensi  |                                                                                                                                                                                      | f                | postgres | {=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+ hapus_data_absensi      | p_bulan text, p_kelas text                                                                                                                                                           | f                | postgres | {postgres=X/postgres,service_role=X/postgres}
+ hari_efektif            | p_tapel text, p_semester text                                                                                                                                                        | f                | postgres | {postgres=X/postgres,service_role=X/postgres}
+ kelas_by_periode        | p_bulan text                                                                                                                                                                         | f                | postgres | {postgres=X/postgres,service_role=X/postgres}
+ kelas_tapel             | p_tapel text                                                                                                                                                                         | f                | postgres | {postgres=X/postgres,service_role=X/postgres}
+ koreksi_absen_masuk     | p_siswa_id bigint, p_tanggal date, p_jam time without time zone, p_status_baru text, p_ket_alpha_sistem text, p_scanner_id text, p_scan_oleh text, p_admin_id bigint, p_scan_id text | f                | postgres | {postgres=X/postgres,service_role=X/postgres}
+ naik_kelas              | p_tapel_tujuan text, p_semester text, p_pemetaan jsonb, p_pengecualian jsonb, p_jumlah_aktif integer, p_user_id bigint                                                               | f                | postgres | {postgres=X/postgres,service_role=X/postgres}
+ rekap_history_siswa     | p_tapel text, p_semester text, p_ids bigint[]                                                                                                                                        | f                | postgres | {postgres=X/postgres,service_role=X/postgres}
+ sinkron_riwayat_periode |                                                                                                                                                                                      | f                | postgres | {=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+ sinkron_riwayat_siswa   |                                                                                                                                                                                      | f                | postgres | {=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+ siswa_tapel             | p_tapel text, p_kelas text                                                                                                                                                           | f                | postgres | {postgres=X/postgres,service_role=X/postgres}
+(12 rows)
+
+ jenis | nama 
+-------+------
+(0 rows)
+
+         proname         |                                                                                       argumen                                                                                        
+-------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ batalkan_kenaikan_kelas | p_id bigint
+ distinct_bulan_absensi  | 
+ hapus_data_absensi      | p_bulan text, p_kelas text
+ hari_efektif            | p_tapel text, p_semester text
+ kelas_by_periode        | p_bulan text
+ koreksi_absen_masuk     | p_siswa_id bigint, p_tanggal date, p_jam time without time zone, p_status_baru text, p_ket_alpha_sistem text, p_scanner_id text, p_scan_oleh text, p_admin_id bigint, p_scan_id text
+ naik_kelas              | p_tapel_tujuan text, p_semester text, p_pemetaan jsonb, p_pengecualian jsonb, p_jumlah_aktif integer, p_user_id bigint
+ rekap_history_siswa     | p_tapel text, p_semester text, p_ids bigint[]
+ sinkron_riwayat_siswa   | 
+(9 rows)
+
+          evtname          |    evtevent     |         fungsi          
+---------------------------+-----------------+-------------------------
+ issue_graphql_placeholder | sql_drop        | set_graphql_placeholder
+ issue_pg_cron_access      | ddl_command_end | grant_pg_cron_access
+ issue_pg_graphql_access   | ddl_command_end | grant_pg_graphql_access
+ issue_pg_net_access       | ddl_command_end | grant_pg_net_access
+ pgrst_ddl_watch           | ddl_command_end | pgrst_ddl_watch
+ pgrst_drop_watch          | sql_drop        | pgrst_drop_watch
+(6 rows)
+
+      extname       | extversion 
+--------------------+------------
+ pg_stat_statements | 1.11
+ pgcrypto           | 1.3
+ plpgsql            | 1.0
+ supabase_vault     | 0.3.1
+ uuid-ossp          | 1.1
+(5 rows)
+
+       pemilik       | schema_target  | jenis |                                                                    acl                                                                     
+---------------------+----------------+-------+--------------------------------------------------------------------------------------------------------------------------------------------
+ postgres            | public         | S     | {postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}
+ postgres            | public         | f     | {postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+ postgres            | public         | r     | {postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+ postgres            | storage        | S     | {postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}
+ postgres            | storage        | f     | {postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+ postgres            | storage        | r     | {postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+ supabase_admin      | extensions     | S     | {postgres=r*w*U*/supabase_admin}
+ supabase_admin      | extensions     | f     | {postgres=X*/supabase_admin}
+ supabase_admin      | extensions     | r     | {postgres=a*r*w*d*D*x*t*m*/supabase_admin}
+ supabase_admin      | graphql        | S     | {postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}
+ supabase_admin      | graphql        | f     | {postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}
+ supabase_admin      | graphql        | r     | {postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}
+ supabase_admin      | graphql_public | S     | {postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}
+ supabase_admin      | graphql_public | f     | {postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}
+ supabase_admin      | graphql_public | r     | {postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}
+ supabase_admin      | public         | S     | {postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}
+ supabase_admin      | public         | f     | {postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}
+ supabase_admin      | public         | r     | {postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}
+ supabase_admin      | realtime       | S     | {postgres=rwU/supabase_admin,dashboard_user=rwU/supabase_admin}
+ supabase_admin      | realtime       | f     | {postgres=X/supabase_admin,dashboard_user=X/supabase_admin}
+ supabase_admin      | realtime       | r     | {postgres=a*r*wdDxtm/supabase_admin,dashboard_user=arwdDxtm/supabase_admin}
+ supabase_auth_admin | auth           | S     | {postgres=rwU/supabase_auth_admin,dashboard_user=rwU/supabase_auth_admin}
+ supabase_auth_admin | auth           | f     | {postgres=X/supabase_auth_admin,dashboard_user=X/supabase_auth_admin}
+ supabase_auth_admin | auth           | r     | {postgres=arwdDxtm/supabase_auth_admin,dashboard_user=arwdDxtm/supabase_auth_admin}
+(24 rows)
+
+     tabel     | baris 
+---------------+-------
+ absensi       |  5491
+ absensi_log   |   706
+ log_aktivitas |   442
+ students      |   213
+ users         |    10
+(5 rows)
+
+    relname    | ukuran  
+---------------+---------
+ absensi       | 1768 kB
+ absensi_log   | 272 kB
+ log_aktivitas | 200 kB
+ students      | 152 kB
+ users         | 48 kB
+(5 rows)
+
+ id | jam_masuk | batas_terlambat | jam_pulang_mulai |   tapel   | semester | durasi_kunci_menit | toleransi_pagi_menit 
+----+-----------+-----------------+------------------+-----------+----------+--------------------+----------------------
+  1 | 07:00:00  | 08:00:00        | 10:00:00         | 2026/2027 | ganjil   |                125 |                  120
+(1 row)
+
+ siswa_id | tanggal | jumlah 
+----------+---------+--------
+(0 rows)
+
+  status   | jumlah 
+-----------+--------
+ alpha     |   4952
+ hadir     |    482
+ terlambat |     54
+ izin      |      2
+ sakit     |      1
+(5 rows)
+
+  status   | dengan_jam | total 
+-----------+------------+-------
+ alpha     |          0 |  4952
+ hadir     |        482 |   482
+ izin      |          0 |     2
+ sakit     |          0 |     1
+ terlambat |         54 |    54
+(5 rows)
+
+ total | ada_lampiran | tapel_null 
+-------+--------------+------------
+  5491 |            0 |          0
+(1 row)
+
+ host | jumlah 
+------+--------
+(0 rows)
+
