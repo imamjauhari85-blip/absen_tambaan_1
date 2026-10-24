@@ -6,6 +6,7 @@ import { getAbsensiSetting } from "@/lib/data/dashboard";
 import { getRekapHistoryPage, getSemuaKelasRekap } from "@/lib/data/rekap";
 import { getListTapel } from "@/lib/data/history";
 import Pagination from "@/components/ui/Pagination";
+import InfoJumlah from "@/components/ui/InfoJumlah";
 import PageTitle from "@/components/ui/PageTitle";
 
 const PAGE_SIZE = 10;
@@ -168,11 +169,11 @@ export default async function RekapHistoryPage({
                   <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                     <td className="px-6 py-3.5 text-center font-bold text-gray-400">{(page - 1) * PAGE_SIZE + idx + 1}</td>
                     <td className="px-6 py-3.5">
-                      <div className="font-bold text-gray-800 dark:text-gray-200">
-                        {r.nama}
-                        {r.labelKeluar && <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold">{r.labelKeluar}</span>}
+                      <div className="font-bold text-gray-800 dark:text-gray-200">{r.nama}</div>
+                      <div className="text-[10px] text-gray-400 font-mono">
+                        {r.nisn}
+                        {r.labelKeluar && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-sans font-bold">{r.labelKeluar}</span>}
                       </div>
-                      <div className="text-[10px] text-gray-400 font-mono">{r.nisn}</div>
                     </td>
                     <td className="px-6 py-3.5 text-center font-bold text-gray-500 uppercase">{r.kelas}</td>
                     <td className="px-6 py-3.5 text-center font-bold text-emerald-600">{r.hadir}</td>
@@ -192,6 +193,7 @@ export default async function RekapHistoryPage({
 
         <Pagination page={page} totalPages={totalPages} buildHref={buildPageHref} />
       </div>
+      <InfoJumlah tampil={pagedRows.length} total={totalSiswa} satuan="siswa" />
     </div>
   );
 }

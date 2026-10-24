@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { StudentFull } from "@/types";
 import Portal from "@/components/ui/Portal";
 import NotifModal from "@/components/ui/NotifModal";
+import KonfirmasiPeringatanModal from "@/components/ui/KonfirmasiPeringatanModal";
 import { formatTglIndo, todayJakarta } from "@/lib/utils/tanggal";
 
 const KATA_KONFIRMASI = "HAPUS";
@@ -15,6 +16,7 @@ export default function SiswaNonaktifTable({ list }: { list: StudentFull[] }) {
   const [hapusTarget, setHapusTarget] = useState<StudentFull | null>(null);
   const [ubahTarget, setUbahTarget] = useState<StudentFull | null>(null);
   const [tanggalBaru, setTanggalBaru] = useState("");
+  const [peringatan, setPeringatan] = useState<string | null>(null);
   const [teksKonfirmasi, setTeksKonfirmasi] = useState("");
   const [busy, setBusy] = useState(false);
   const [notif, setNotif] = useState<{ status: "ok" | "error"; message: string } | null>(null);
@@ -62,14 +64,21 @@ export default function SiswaNonaktifTable({ list }: { list: StudentFull[] }) {
     setUbahTarget(s);
   }
 
-  async function simpanTanggalKeluar() {
+  async function simpanTanggalKeluar(sudahKonfirmasi = false) {
     if (!ubahTarget) return;
     setBusy(true);
     try {
       const form = new FormData();
       form.set("tanggal", tanggalBaru);
+      if (sudahKonfirmasi) form.set("konfirmasi", "1");
       const res = await fetch(`/api/siswa/${ubahTarget.id}/tanggal-keluar`, { method: "POST", body: form });
       const data = await res.json();
+      if (data.status === "konfirmasi") {
+        // Server minta konfirmasi (mis. tanggal hari Minggu / ada absensi sesudahnya): tampilkan modal peringatan.
+        setPeringatan(data.message || "Periksa kembali tanggal pindah.");
+        return;
+      }
+      setPeringatan(null);
       const nama = ubahTarget.name;
       setUbahTarget(null);
       if (data.status === "ok") {
@@ -198,13 +207,20 @@ export default function SiswaNonaktifTable({ list }: { list: StudentFull[] }) {
             onClick={() => !busy && setUbahTarget(null)}
           >
             <div
-              className="bg-white dark:bg-[#1e2235] w-full max-w-[340px] rounded-[2.5rem] p-8 border border-gray-200 dark:border-white/10 shadow-2xl text-center"
+              className="bg-white dark:bg-[#1e2235] w-full max-w-[320px] rounded-[2.5rem] p-8 border border-gray-200 dark:border-white/10 shadow-2xl relative text-center"
               onClick={(e) => e.stopPropagation()}
             >
+              <div className="flex justify-center -mt-16 mb-6">
+                <div className="w-16 h-16 bg-white dark:bg-[#1e2235] border-4 border-gray-100 dark:border-[#282d45] rounded-full flex items-center justify-center shadow-xl">
+                  <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-indigo-500/40">
+                    <i className="fas fa-calendar-day text-sm" />
+                  </div>
+                </div>
+              </div>
               <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2 tracking-tight">Ubah Tanggal Pindah</h3>
               <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed px-2 mb-5">
                 <strong className="text-gray-700 dark:text-gray-300">{ubahTarget.name}</strong> (Kelas {ubahTarget.class}).
-                Hari terakhir siswa masih dihitung di rekap. Absensi sesudahnya tidak dihitung (tidak dihapus). Perubahan ini langsung memengaruhi rekap harian, bulanan, dan history.
+                Siswa masih tampil di rekap pada tanggal ini, tetapi absensi pada tanggal ini dan sesudahnya tidak dihitung (tidak dihapus). Perubahan ini langsung memengaruhi rekap harian, bulanan, dan history.
               </p>
               <input
                 type="date"
@@ -226,7 +242,7 @@ export default function SiswaNonaktifTable({ list }: { list: StudentFull[] }) {
                   Batal
                 </button>
                 <button
-                  onClick={simpanTanggalKeluar}
+                  onClick={() => simpanTanggalKeluar()}
                   disabled={busy}
                   className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70 text-white rounded-2xl text-[10px] font-bold transition-all uppercase tracking-widest shadow-lg shadow-indigo-500/20"
                 >
@@ -352,6 +368,15 @@ export default function SiswaNonaktifTable({ list }: { list: StudentFull[] }) {
         </Portal>
       )}
 
+      <KonfirmasiPeringatanModal
+        open={peringatan !== null}
+        judul="Periksa Tanggal Pindah"
+        pesan={peringatan ?? ""}
+        labelYa="Ya, Simpan"
+        busy={busy}
+        onYa={() => simpanTanggalKeluar(true)}
+        onBatal={() => setPeringatan(null)}
+      />
       <NotifModal open={!!notif} status={notif?.status ?? "ok"} message={notif?.message ?? ""} onClose={tutupNotif} />
     </>
   );

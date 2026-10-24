@@ -12,6 +12,8 @@ export interface SiswaHistoryProfile {
   nisn: string | null;
   foto: string | null;
   jenis_kelamin: string | null;
+  /** "aktif" | "lulus" | "pindah". Portal siswa memakainya untuk menolak siswa non-aktif yang sesinya masih hidup. */
+  status: string;
 }
 
 export interface RiwayatRow {
@@ -39,7 +41,7 @@ export interface ChartBulanan {
 export async function getSiswaProfile(id: number): Promise<SiswaHistoryProfile | null> {
   const { data } = await supabaseAdmin
     .from("students")
-    .select("id, name, class, nisn, foto, jenis_kelamin")
+    .select("id, name, class, nisn, foto, jenis_kelamin, status")
     .eq("id", id)
     .maybeSingle();
   return data ?? null;
@@ -126,7 +128,7 @@ export async function getChartTren6Bulan(siswaId: number): Promise<ChartBulanan[
   const perBulan = new Map<string, { hadir: number; alpha: number }>();
   for (const r of data ?? []) {
     if (liburSet.has(r.tanggal)) continue; // abaikan record di tanggal libur
-    if (!dalamBatasPindah(r.tapel, r.tanggal, batasPindah)) continue; // sesudah tanggal pindah
+    if (!dalamBatasPindah(r.tapel, r.tanggal, batasPindah)) continue; // pada/sesudah tanggal pindah
     const bln = r.tanggal.slice(0, 7); // YYYY-MM
     if (!perBulan.has(bln)) perBulan.set(bln, { hadir: 0, alpha: 0 });
     const entry = perBulan.get(bln)!;
